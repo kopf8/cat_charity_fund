@@ -130,3 +130,6 @@ dmypy.json
 
 # .idea
 .idea
+/postman_collection
+postman_collection/
+setup_for_postman.py
