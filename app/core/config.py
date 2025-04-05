@@ -5,7 +5,8 @@ from pydantic import BaseSettings, EmailStr
 
 class Settings(BaseSettings):
     app_title: str = 'QRkot'
-    app_description: str = 'Приложение для Благотворительного фонда поддержки котиков QRKot'
+    app_description: str = 'Приложение для Благотворительного фонда ' \
+                            'поддержки котиков QRKot'
     database_url: str = 'sqlite+aiosqlite:///./fastapi.db'
     secret: str = 'SECRET'
     first_superuser_email: Optional[EmailStr] = None
@@ -41,8 +42,10 @@ class Messages:
     EMAIL_IN_PASSWORD = 'Password should not contain email'
     USER_REGISTERED = 'User registered: '
     INVESTMENT_ERROR = 'An error has occurred during investment'
-    PROJECT_AMOUNTS_ERROR = 'Full amount cannot be less than already invested amount'
-    PROJECT_FUTURE_DATE_ERROR = 'Date of project opening cannot be in the future'
+    PROJECT_AMOUNTS_ERROR = 'Full amount cannot be less than already ' \
+                            'invested amount'
+    PROJECT_FUTURE_DATE_ERROR = 'Date of project opening cannot be ' \
+                                'in the future'
     PROJECT_NAME_OCCUPIED = 'Project name already occupied'
     PROJECT_NAME_NOT_NULL = 'Project name cannot be empty'
     PROJECT_DESCRIPTION_NOT_NULL = 'Project description cannot be empty'
