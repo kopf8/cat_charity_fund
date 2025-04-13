@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, conint, Extra
+from pydantic import BaseModel, Extra, conint
 
 
 class DonationBase(BaseModel):
