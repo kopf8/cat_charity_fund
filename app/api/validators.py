@@ -1,10 +1,10 @@
-from fastapi import HTTPException
 from http import HTTPStatus
+
+from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Messages
 from app.crud.charity_project import charity_project_crud
-from app.models.charity_project import CharityProject
 
 
 async def check_charity_project_name_duplicate(
@@ -19,21 +19,6 @@ async def check_charity_project_name_duplicate(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=Messages.PROJECT_NAME_OCCUPIED
         )
-
-
-async def check_charity_project_exists(
-        charity_project_id: int,
-        session: AsyncSession,
-) -> CharityProject:
-    charity_project = await charity_project_crud.get(
-        charity_project_id, session
-    )
-    if not charity_project:
-        raise HTTPException(
-            status_code=HTTPStatus.BAD_REQUEST,
-            detail=Messages.PROJECT_NOT_FOUND
-        )
-    return charity_project
 
 
 async def check_charity_project_is_open(
@@ -57,7 +42,7 @@ async def check_charity_project_invested(
     charity_project = await charity_project_crud.get(
         charity_project_id, session
     )
-    if charity_project.invested_amount > 0:
+    if charity_project.invested_amount:
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=Messages.PROJECT_INVESTED

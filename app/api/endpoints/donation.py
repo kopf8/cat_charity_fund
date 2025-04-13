@@ -9,7 +9,7 @@ from app.crud.charity_project import charity_project_crud
 from app.schemas.donation import (
     DonationCreate, DonationShortDB, DonationFullDB
 )
-from app.models import User
+from app.models import User, CharityProject, InvestmentBaseModel
 
 from app.services.investment_func import perform_investment
 
@@ -31,13 +31,11 @@ async def create_new_donation(
     new_donation = await donation_crud.create(
         donation, session, user, need_for_commit=False
     )
-    changed_projects = perform_investment(
-        new_donation, await charity_project_crud.get_all_open(session)
+    return await perform_investment(
+        obj_in=new_donation,
+        model_db=CharityProject,
+        session=session,
     )
-    session.add_all(changed_projects)
-    await session.commit()
-    await session.refresh(new_donation)
-    return new_donation
 
 
 @router.get(

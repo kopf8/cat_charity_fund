@@ -1,21 +1,20 @@
 from fastapi import APIRouter, Depends
-
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.validators import (check_charity_project_is_open,
-                                check_charity_project_exists,
+from app.api.validators import (check_charity_project_invested,
+                                check_charity_project_is_open,
                                 check_charity_project_name_duplicate,
-                                check_new_full_amount,
-                                check_charity_project_invested)
+                                check_new_full_amount)
 from app.core.db import get_async_session
 from app.core.user import current_superuser
 from app.crud.charity_project import charity_project_crud
 from app.crud.donation import donation_crud
-from app.schemas.charity_project import (
-    CharityProjectCreate, CharityProjectDB, CharityProjectUpdate
-)
+from app.models import Donation
+from app.schemas.charity_project import (CharityProjectCreate,
+                                         CharityProjectDB,
+                                         CharityProjectUpdate)
+from app.services.get_project_or_404 import get_project_or_404
 from app.services.investment_func import perform_investment
-
 
 router = APIRouter()
 
@@ -32,16 +31,12 @@ async def create_new_charity_project(
 ):
     """For superusers only"""
     await check_charity_project_name_duplicate(charity_project.name, session)
-    new_project = await charity_project_crud.create(
-        charity_project, session, need_for_commit=False
+    new_project = await charity_project_crud.create(charity_project, session)
+    return await perform_investment(
+        obj_in=new_project,
+        model_db=Donation,
+        session=session
     )
-    changed_donations = perform_investment(
-        new_project, await donation_crud.get_all_open(session)
-    )
-    session.add_all(changed_donations)
-    await session.commit()
-    await session.refresh(new_project)
-    return new_project
 
 
 @router.get(
@@ -68,7 +63,7 @@ async def partially_update_charity_project(
     session: AsyncSession = Depends(get_async_session),
 ):
     """For superuser only"""
-    charity_project = await check_charity_project_exists(project_id, session)
+    charity_project = await get_project_or_404(project_id, session)
     await check_charity_project_is_open(project_id, session)
     if obj_in.full_amount:
         check_new_full_amount(
@@ -91,7 +86,7 @@ async def remove_charity_project(
     session: AsyncSession = Depends(get_async_session)
 ):
     """For superusers only"""
-    charity_project = await check_charity_project_exists(
+    charity_project = await get_project_or_404(
         project_id, session
     )
     await check_charity_project_is_open(project_id, session)
