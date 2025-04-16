@@ -3,15 +3,15 @@ from http import HTTPStatus
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
+import app.crud.charity_project as cp
 from app.core.config import Messages
-from app.crud.charity_project import charity_project_crud
 
 
 async def check_charity_project_name_duplicate(
         project_name: str,
         session: AsyncSession
 ) -> None:
-    charity_project = await charity_project_crud.get_charity_project_by_name(
+    charity_project = await cp.charity_project_crud.get_charity_project_by_name(
         project_name, session
     )
     if charity_project:
@@ -25,7 +25,7 @@ async def check_charity_project_is_open(
         charity_project_id: int,
         session: AsyncSession,
 ) -> None:
-    charity_project = await charity_project_crud.get(
+    charity_project = await cp.charity_project_crud.get(
         charity_project_id, session
     )
     if charity_project.fully_invested:
@@ -39,7 +39,7 @@ async def check_charity_project_invested(
         charity_project_id: int,
         session: AsyncSession
 ) -> None:
-    charity_project = await charity_project_crud.get(
+    charity_project = await cp.charity_project_crud.get(
         charity_project_id, session
     )
     if charity_project.invested_amount:

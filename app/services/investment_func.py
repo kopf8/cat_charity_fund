@@ -3,7 +3,6 @@ from datetime import datetime
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import Constants
 from app.models import InvestmentBaseModel
 
 
@@ -19,7 +18,7 @@ async def close_entity(
 async def distribution(
     obj_in: InvestmentBaseModel,
     obj_db: InvestmentBaseModel
-) -> list[InvestmentBaseModel]:
+) -> tuple[InvestmentBaseModel, InvestmentBaseModel]:
     rem_obj_in = obj_in.full_amount - obj_in.invested_amount
     rem_obj_db = obj_db.full_amount - obj_db.invested_amount
     if rem_obj_in > rem_obj_db:
@@ -41,7 +40,7 @@ async def perform_investment(
 ) -> InvestmentBaseModel:
     source_db_all = await session.execute(
         select(model_db).where(
-            model_db.fully_invested == Constants.NULL_VALUE
+            model_db.fully_invested == False
         ).order_by(model_db.create_date)
     )
     source_db_all = source_db_all.scalars().all()

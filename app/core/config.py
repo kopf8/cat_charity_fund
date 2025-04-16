@@ -32,7 +32,6 @@ class Constants:
     PROJECT_ENDPOINTS_TAGS = ('charity_projects',)
     DONATION_ENDPOINTS_PREFIX = '/donation'
     DONATION_ENDPOINTS_TAGS = ('donations',)
-    NULL_VALUE = 0
 
 
 class Messages:
