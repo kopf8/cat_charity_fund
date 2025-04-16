@@ -11,7 +11,7 @@ async def check_charity_project_name_duplicate(
         project_name: str,
         session: AsyncSession
 ) -> None:
-    charity_project = await cp.charity_project_crud.get_charity_project_by_name(
+    charity_project = await cp.charity_project_crud.get_project_by_name(
         project_name, session
     )
     if charity_project:

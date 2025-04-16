@@ -41,7 +41,9 @@ class CRUDBase:
     ):
         obj_in_data = obj_in.dict()
         if obj_in_data.get('name') is not None:
-            await vld.check_charity_project_name_duplicate(obj_in_data['name'], session)
+            await vld.check_charity_project_name_duplicate(
+                obj_in_data['name'], session
+            )
         if user is not None:
             obj_in_data['user_id'] = user.id
         db_obj = self.model(**obj_in_data)
@@ -53,11 +55,10 @@ class CRUDBase:
         await session.refresh(db_obj)
         model_in = Donation if self.model is CharityProject else CharityProject
         return await perform_investment(
-        obj_in=db_obj,
-        model_db=model_in,
-        session=session
-    )
-
+            obj_in=db_obj,
+            model_db=model_in,
+            session=session
+        )
 
     @staticmethod
     async def update(
@@ -73,7 +74,9 @@ class CRUDBase:
                 obj_in.full_amount
             )
         if obj_in.name:
-            await vld.check_charity_project_name_duplicate(obj_in.name, session)
+            await vld.check_charity_project_name_duplicate(
+                obj_in.name, session
+            )
         if obj_in.full_amount:
             if obj_in.full_amount == charity_project.invested_amount:
                 setattr(charity_project, 'fully_invested', True)
@@ -87,7 +90,6 @@ class CRUDBase:
         await session.commit()
         await session.refresh(charity_project)
         return charity_project
-
 
     @staticmethod
     async def remove(
@@ -106,7 +108,6 @@ class CRUDBase:
         await session.delete(charity_project)
         await session.commit()
         return charity_project
-
 
     async def get_all_open(
             self,

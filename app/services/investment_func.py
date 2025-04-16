@@ -40,7 +40,7 @@ async def perform_investment(
 ) -> InvestmentBaseModel:
     source_db_all = await session.execute(
         select(model_db).where(
-            model_db.fully_invested == False
+            model_db.fully_invested == False  # noqa: E712
         ).order_by(model_db.create_date)
     )
     source_db_all = source_db_all.scalars().all()

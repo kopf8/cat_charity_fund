@@ -10,7 +10,7 @@ from app.models.charity_project import CharityProject
 class CRUDCharityProject(CRUDBase):
 
     @staticmethod
-    async def get_charity_project_by_name(
+    async def get_project_by_name(
             project_name: str,
             session: AsyncSession
     ) -> Optional[int]:
