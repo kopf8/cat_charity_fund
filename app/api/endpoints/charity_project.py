@@ -1,9 +1,12 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
+import app.api.utils as u
+import app.services.investment_func as f
 from app.core.db import get_async_session
 from app.core.user import current_superuser
 from app.crud.charity_project import charity_project_crud
+from app.models import CharityProject
 from app.schemas.charity_project import (CharityProjectCreate,
                                          CharityProjectDB,
                                          CharityProjectUpdate)
@@ -22,7 +25,7 @@ async def create_new_charity_project(
     session: AsyncSession = Depends(get_async_session),
 ):
     """For superusers only"""
-    return await charity_project_crud.create(charity_project, session)
+    return await f.create_new_object(charity_project, CharityProject, session)
 
 
 @router.get(
@@ -47,9 +50,10 @@ async def partially_update_charity_project(
     project_id: int,
     obj_in: CharityProjectUpdate,
     session: AsyncSession = Depends(get_async_session),
-):
+) -> CharityProjectDB:
     """For superuser only"""
-    return await charity_project_crud.update(project_id, obj_in, session)
+    charity_project = await u.get_project_or_404(project_id, session)
+    return await f.update_object(charity_project, obj_in, session)
 
 
 @router.delete(
@@ -63,4 +67,5 @@ async def remove_charity_project(
     session: AsyncSession = Depends(get_async_session)
 ):
     """For superusers only"""
-    return await charity_project_crud.remove(project_id, session)
+    charity_project = await u.get_project_or_404(project_id, session)
+    return await charity_project_crud.remove(charity_project, session)

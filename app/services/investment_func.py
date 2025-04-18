@@ -1,9 +1,14 @@
 from datetime import datetime
+from typing import Optional, Type, Union
 
+from fastapi.encoders import jsonable_encoder
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import InvestmentBaseModel
+import app.services.validators as vld
+from app.crud.charity_project import charity_project_crud
+from app.models import CharityProject, Donation, InvestmentBaseModel, User
+from app.schemas.charity_project import CharityProjectDB, CharityProjectUpdate
 
 
 async def close_entity(
@@ -35,7 +40,7 @@ async def distribution(
 
 async def perform_investment(
     obj_in: InvestmentBaseModel,
-    model_db: InvestmentBaseModel,
+    model_db: Type[Union[Donation, CharityProject]],
     session: AsyncSession
 ) -> InvestmentBaseModel:
     source_db_all = await session.execute(
@@ -53,3 +58,59 @@ async def perform_investment(
     await session.commit()
     await session.refresh(obj_in)
     return obj_in
+
+
+async def create_new_object(
+    obj_in,
+    model,
+    session: AsyncSession,
+    user: Optional[User] = None,
+    need_for_commit: Optional[bool] = True
+) -> InvestmentBaseModel:
+    obj_in_data = obj_in.dict()
+    if obj_in_data.get('name') is not None:
+        await vld.check_charity_project_name_duplicate(
+            obj_in_data['name'], session
+        )
+    if user is not None:
+        obj_in_data['user_id'] = user.id
+    db_obj = model(**obj_in_data)
+    if not need_for_commit and model is CharityProject:
+        db_obj.invested_amount = 0
+        db_obj.fully_invested = False
+    session.add(db_obj)
+    await session.commit()
+    await session.refresh(db_obj)
+    model_in = Donation if model is CharityProject else CharityProject
+    return await perform_investment(
+        obj_in=db_obj,
+        model_db=model_in,
+        session=session
+    )
+
+
+async def update_object(
+    charity_project,
+    obj_in: CharityProjectUpdate,
+    session: AsyncSession,
+) -> CharityProjectDB:
+    await vld.check_charity_project_is_open(charity_project)
+    if obj_in.full_amount:
+        vld.check_new_full_amount(
+            charity_project.invested_amount,
+            obj_in.full_amount
+        )
+    if obj_in.name:
+        await vld.check_charity_project_name_duplicate(
+            obj_in.name, session
+        )
+    if obj_in.full_amount:
+        if obj_in.full_amount == charity_project.invested_amount:
+            setattr(charity_project, 'fully_invested', True)
+            setattr(charity_project, 'close_date', datetime.now())
+    obj_data = jsonable_encoder(charity_project)
+    update_data = obj_in.dict(exclude_unset=True)
+    for field in obj_data:
+        if field in update_data:
+            setattr(charity_project, field, update_data[field])
+    return await charity_project_crud.update(charity_project, session)

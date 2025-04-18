@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 import app.crud.charity_project as cp
 from app.core.config import Messages
+from app.models import CharityProject
 
 
 async def check_charity_project_name_duplicate(
@@ -22,12 +23,8 @@ async def check_charity_project_name_duplicate(
 
 
 async def check_charity_project_is_open(
-        charity_project_id: int,
-        session: AsyncSession,
+        charity_project: CharityProject
 ) -> None:
-    charity_project = await cp.charity_project_crud.get(
-        charity_project_id, session
-    )
     if charity_project.fully_invested:
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
@@ -36,12 +33,7 @@ async def check_charity_project_is_open(
 
 
 async def check_charity_project_invested(
-        charity_project_id: int,
-        session: AsyncSession
-) -> None:
-    charity_project = await cp.charity_project_crud.get(
-        charity_project_id, session
-    )
+        charity_project: CharityProject) -> None:
     if charity_project.invested_amount:
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
