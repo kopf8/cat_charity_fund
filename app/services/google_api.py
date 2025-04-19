@@ -15,8 +15,10 @@ async def spreadsheets_create(wrapper_services: Aiogoogle) -> str:
         'sheets': [{'properties': {'sheetType': 'GRID',
                                    'sheetId': 0,
                                    'title': 'Отчет',
-                                   'gridProperties': {'rowCount': Constants.ROWS,
-                                                      'columnCount': Constants.COLUMNS}}}]
+                                   'gridProperties': {
+                                       'rowCount': Constants.ROWS,
+                                       'columnCount': Constants.COLUMNS
+                                   }}}]
     }
     response = await wrapper_services.as_service_account(
         service.spreadsheets.create(json=spreadsheet_body)
