@@ -16,6 +16,7 @@
 - ![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)
 - ![SQLAlchemy](https://img.shields.io/badge/SQLALCHEMY-D71F00?style=for-the-badge&logo=sqlalchemy&logoColor=white&logoSize=auto)
 - ![SQLite](https://img.shields.io/badge/sqlite-%2307405e.svg?style=for-the-badge&logo=sqlite&logoColor=white)
+- ![GoogleCloudAPI](https://img.shields.io/badge/googlecloud-4285F4?style=for-the-badge&logo=googlecloud&logoColor=white)
 
 <br><hr>
 ## Project description:
@@ -53,6 +54,7 @@ SECRET
 FIRST_SUPERUSER_EMAIL
 FIRST_SUPERUSER_PASSWORD
 ```
+...and also credentials for your key & service account to access Google Drive & Google Spreadsheet.
 Hint - There's a sample file _**.env.example**_ which can be used as a draft.
 
 Create & update database by performing the following steps:

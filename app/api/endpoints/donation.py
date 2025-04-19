@@ -5,7 +5,7 @@ import app.services.investment_func as f
 from app.core.db import get_async_session
 from app.core.user import current_superuser, current_user
 from app.crud.donation import donation_crud
-from app.models import User, Donation
+from app.models import Donation, User
 from app.schemas.donation import (DonationCreate, DonationFullDB,
                                   DonationShortDB)
 
