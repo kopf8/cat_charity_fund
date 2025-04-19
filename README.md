@@ -85,6 +85,8 @@ Available endpoints:
 - Donations:
     - **/donation/** - get list of all donations / create new donation
     - **/donation/my** - get list of all donations done by authenticated user
+- Google report:
+  - **/google/** - get Google Spreadsheet report on all closed projects and the timing of their investments.
 
 After you run the server, project specification will be available at the following endpoints: [Swagger](http://127.0.0.1:8000/docs), [ReDoc](http://127.0.0.1:8000/redoc)
 
