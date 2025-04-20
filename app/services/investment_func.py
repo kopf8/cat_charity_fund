@@ -1,7 +1,6 @@
 from datetime import datetime
 from typing import Optional, Type, Union
 
-from fastapi.encoders import jsonable_encoder
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -11,106 +10,119 @@ from app.models import CharityProject, Donation, InvestmentBaseModel, User
 from app.schemas.charity_project import CharityProjectDB, CharityProjectUpdate
 
 
-async def close_entity(
-    obj_db: InvestmentBaseModel
-) -> InvestmentBaseModel:
-    obj_db.invested_amount = obj_db.full_amount
-    obj_db.fully_invested = True
-    obj_db.close_date = datetime.now()
-    return obj_db
+class InvestmentHandler:
+    def __init__(self, session: AsyncSession):
+        self.session = session
 
+    @staticmethod
+    async def close_entity(obj: InvestmentBaseModel) -> InvestmentBaseModel:
+        obj.invested_amount = obj.full_amount
+        obj.fully_invested = True
+        obj.close_date = datetime.now()
+        return obj
 
-async def distribution(
-    obj_in: InvestmentBaseModel,
-    obj_db: InvestmentBaseModel
-) -> tuple[InvestmentBaseModel, InvestmentBaseModel]:
-    rem_obj_in = obj_in.full_amount - obj_in.invested_amount
-    rem_obj_db = obj_db.full_amount - obj_db.invested_amount
-    if rem_obj_in > rem_obj_db:
-        obj_in.invested_amount += rem_obj_db
-        obj_db = await close_entity(obj_db)
-    elif rem_obj_in == rem_obj_db:
-        obj_in = await close_entity(obj_in)
-        obj_db = await close_entity(obj_db)
-    else:
-        obj_db.invested_amount += rem_obj_in
-        obj_in = await close_entity(obj_in)
-    return obj_in, obj_db
+    async def distribute(
+            self,
+            recipient: InvestmentBaseModel,
+            source: InvestmentBaseModel
+    ) -> tuple[InvestmentBaseModel, InvestmentBaseModel]:
+        rem_recipient = recipient.full_amount - recipient.invested_amount
+        rem_source = source.full_amount - source.invested_amount
 
+        if rem_recipient > rem_source:
+            recipient.invested_amount += rem_source
+            source = await self.close_entity(source)
+        elif rem_recipient == rem_source:
+            recipient = await self.close_entity(recipient)
+            source = await self.close_entity(source)
+        else:
+            source.invested_amount += rem_recipient
+            recipient = await self.close_entity(recipient)
 
-async def perform_investment(
-    obj_in: InvestmentBaseModel,
-    model_db: Type[Union[Donation, CharityProject]],
-    session: AsyncSession
-) -> InvestmentBaseModel:
-    source_db_all = await session.execute(
-        select(model_db).where(
-            model_db.fully_invested == False  # noqa: E712
-        ).order_by(model_db.create_date)
-    )
-    source_db_all = source_db_all.scalars().all()
-    for source_db in source_db_all:
-        obj_in, source_db = await distribution(
-            obj_in, source_db
+        return recipient, source
+
+    async def perform_investment(
+            self,
+            obj_in: InvestmentBaseModel,
+            model_db: Type[Union[Donation, CharityProject]]
+    ) -> InvestmentBaseModel:
+        result = await self.session.execute(
+            select(model_db).where(
+                model_db.fully_invested == False  # noqa: E712
+            ).order_by(model_db.create_date)
         )
-        session.add(obj_in)
-        session.add(source_db)
-    await session.commit()
-    await session.refresh(obj_in)
-    return obj_in
+        sources = result.scalars().all()
+
+        for source in sources:
+            obj_in, source = await self.distribute(obj_in, source)
+            self.session.add(obj_in)
+            self.session.add(source)
+
+        await self.session.commit()
+        await self.session.refresh(obj_in)
+        return obj_in
 
 
-async def create_new_object(
-    obj_in,
-    model,
-    session: AsyncSession,
-    user: Optional[User] = None,
-    need_for_commit: Optional[bool] = True
-) -> InvestmentBaseModel:
-    obj_in_data = obj_in.dict()
-    if obj_in_data.get('name') is not None:
-        await vld.check_charity_project_name_duplicate(
-            obj_in_data['name'], session
-        )
-    if user is not None:
-        obj_in_data['user_id'] = user.id
-    db_obj = model(**obj_in_data)
-    if not need_for_commit and model is CharityProject:
-        db_obj.invested_amount = 0
-        db_obj.fully_invested = False
-    session.add(db_obj)
-    await session.commit()
-    await session.refresh(db_obj)
-    model_in = Donation if model is CharityProject else CharityProject
-    return await perform_investment(
-        obj_in=db_obj,
-        model_db=model_in,
-        session=session
-    )
+class InvestmentService:
+    def __init__(self, session: AsyncSession):
+        self.session = session
+        self.handler = InvestmentHandler(session)
 
+    async def create_object(
+            self,
+            obj_in,
+            model,
+            user: Optional[User] = None,
+            need_for_commit: bool = True
+    ) -> InvestmentBaseModel:
+        obj_data = obj_in.dict()
 
-async def update_object(
-    charity_project,
-    obj_in: CharityProjectUpdate,
-    session: AsyncSession,
-) -> CharityProjectDB:
-    await vld.check_charity_project_is_open(charity_project)
-    if obj_in.full_amount:
-        vld.check_new_full_amount(
-            charity_project.invested_amount,
-            obj_in.full_amount
-        )
-    if obj_in.name:
-        await vld.check_charity_project_name_duplicate(
-            obj_in.name, session
-        )
-    if obj_in.full_amount:
-        if obj_in.full_amount == charity_project.invested_amount:
-            setattr(charity_project, 'fully_invested', True)
-            setattr(charity_project, 'close_date', datetime.now())
-    obj_data = jsonable_encoder(charity_project)
-    update_data = obj_in.dict(exclude_unset=True)
-    for field in obj_data:
-        if field in update_data:
-            setattr(charity_project, field, update_data[field])
-    return await charity_project_crud.update(charity_project, session)
+        if 'name' in obj_data:
+            await vld.check_charity_project_name_duplicate(
+                obj_data['name'], self.session
+            )
+
+        if user is not None:
+            obj_data['user_id'] = user.id
+
+        db_obj = model(**obj_data)
+
+        if not need_for_commit and model is CharityProject:
+            db_obj.invested_amount = 0
+            db_obj.fully_invested = False
+
+        self.session.add(db_obj)
+        await self.session.commit()
+        await self.session.refresh(db_obj)
+
+        model_in = Donation if model is CharityProject else CharityProject
+        return await self.handler.perform_investment(db_obj, model_in)
+
+    async def update_charity_project(
+            self,
+            charity_project: CharityProject,
+            obj_in: CharityProjectUpdate
+    ) -> CharityProjectDB:
+        await vld.check_charity_project_is_open(charity_project)
+
+        if obj_in.full_amount is not None:
+            vld.check_new_full_amount(
+                charity_project.invested_amount,
+                obj_in.full_amount
+            )
+
+        if obj_in.name:
+            await vld.check_charity_project_name_duplicate(
+                obj_in.name, self.session
+            )
+
+        if (obj_in.full_amount is not None and
+                obj_in.full_amount == charity_project.invested_amount):
+            charity_project.fully_invested = True
+            charity_project.close_date = datetime.now()
+
+        update_data = obj_in.dict(exclude_unset=True)
+        for field, value in update_data.items():
+            setattr(charity_project, field, value)
+
+        return await charity_project_crud.update(charity_project, self.session)

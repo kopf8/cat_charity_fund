@@ -1,8 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-import app.api.utils as u
-import app.services.investment_func as f
+from app.api.utils import get_project_or_404
 from app.core.db import get_async_session
 from app.core.user import current_superuser
 from app.crud.charity_project import charity_project_crud
@@ -10,6 +9,7 @@ from app.models import CharityProject
 from app.schemas.charity_project import (CharityProjectCreate,
                                          CharityProjectDB,
                                          CharityProjectUpdate)
+from app.services.investment_func import InvestmentService
 
 router = APIRouter()
 
@@ -22,10 +22,11 @@ router = APIRouter()
 )
 async def create_new_charity_project(
     charity_project: CharityProjectCreate,
-    session: AsyncSession = Depends(get_async_session),
+    session: AsyncSession = Depends(get_async_session)
 ):
     """For superusers only"""
-    return await f.create_new_object(charity_project, CharityProject, session)
+    invest_object = InvestmentService(session)
+    return await invest_object.create_object(charity_project, CharityProject)
 
 
 @router.get(
@@ -52,8 +53,9 @@ async def partially_update_charity_project(
     session: AsyncSession = Depends(get_async_session),
 ) -> CharityProjectDB:
     """For superuser only"""
-    charity_project = await u.get_project_or_404(project_id, session)
-    return await f.update_object(charity_project, obj_in, session)
+    invest_object = InvestmentService(session)
+    charity_project = await get_project_or_404(project_id, session)
+    return await invest_object.update_charity_project(charity_project, obj_in)
 
 
 @router.delete(
@@ -67,5 +69,5 @@ async def remove_charity_project(
     session: AsyncSession = Depends(get_async_session)
 ):
     """For superusers only"""
-    charity_project = await u.get_project_or_404(project_id, session)
+    charity_project = await get_project_or_404(project_id, session)
     return await charity_project_crud.remove(charity_project, session)

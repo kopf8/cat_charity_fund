@@ -1,13 +1,13 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-import app.services.investment_func as f
 from app.core.db import get_async_session
 from app.core.user import current_superuser, current_user
 from app.crud.donation import donation_crud
 from app.models import Donation, User
 from app.schemas.donation import (DonationCreate, DonationFullDB,
                                   DonationShortDB)
+from app.services.investment_func import InvestmentService
 
 router = APIRouter()
 
@@ -19,12 +19,13 @@ router = APIRouter()
 )
 async def create_new_donation(
     donation: DonationCreate,
-    session: AsyncSession = Depends(get_async_session),
-    user: User = Depends(current_user)
+    user: User = Depends(current_user),
+    session: AsyncSession = Depends(get_async_session)
 ):
     """For registered users"""
-    return await f.create_new_object(
-        donation, Donation, session, user, need_for_commit=False
+    invest_object = InvestmentService(session)
+    return await invest_object.create_object(
+        donation, Donation, user, need_for_commit=False
     )
 
 
