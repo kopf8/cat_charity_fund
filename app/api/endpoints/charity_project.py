@@ -53,9 +53,9 @@ async def partially_update_charity_project(
     session: AsyncSession = Depends(get_async_session),
 ) -> CharityProjectDB:
     """For superuser only"""
-    invest_object = InvestmentService(session)
     charity_project = await get_project_or_404(project_id, session)
-    return await invest_object.update_charity_project(charity_project, obj_in)
+    new_project = InvestmentService(session)
+    return await new_project.update_charity_project(charity_project, obj_in)
 
 
 @router.delete(
@@ -70,4 +70,5 @@ async def remove_charity_project(
 ):
     """For superusers only"""
     charity_project = await get_project_or_404(project_id, session)
-    return await charity_project_crud.remove(charity_project, session)
+    project = InvestmentService(session)
+    return await project.remove_charity_project(charity_project)

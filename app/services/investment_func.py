@@ -126,3 +126,11 @@ class InvestmentService:
             setattr(charity_project, field, value)
 
         return await charity_project_crud.update(charity_project, self.session)
+
+    async def remove_charity_project(
+            self,
+            charity_project: CharityProject,
+    ) -> CharityProjectDB:
+        await vld.check_charity_project_is_open(charity_project)
+        await vld.check_charity_project_invested(charity_project)
+        return await charity_project_crud.remove(charity_project, self.session)

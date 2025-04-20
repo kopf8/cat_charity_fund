@@ -1,7 +1,6 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-import app.services.validators as vld
 from app.models import CharityProject
 
 
@@ -41,8 +40,6 @@ class CRUDBase:
             charity_project: CharityProject,
             session: AsyncSession
     ):
-        await vld.check_charity_project_is_open(charity_project)
-        await vld.check_charity_project_invested(charity_project)
         await session.delete(charity_project)
         await session.commit()
         return charity_project
