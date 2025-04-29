@@ -27,7 +27,7 @@ fastapi==0.78.0
 flake8==4.0.1
 freezegun==1.2.1
 greenlet==1.1.2
-h11==0.13.0
+h11==0.16.0
 httptools==0.4.0
 idna==3.3
 iniconfig==1.1.1
