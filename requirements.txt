@@ -62,7 +62,7 @@ sqlalchemy==1.4.36
 starlette==0.47.2
 toml==0.10.2
 typing-extensions==4.2.0
-urllib3==1.26.19
+urllib3==2.5.0
 uvicorn[standard]==0.17.6
 watchgod==0.8.2
 websockets==10.3
