@@ -29,7 +29,7 @@ freezegun==1.2.1
 greenlet==1.1.2
 h11==0.16.0
 httptools==0.4.0
-idna==3.3
+idna==3.7
 iniconfig==1.1.1
 makefun==1.13.1
 mako==1.2.2
